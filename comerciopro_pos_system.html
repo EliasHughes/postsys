@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ComercioPro - Sistema POS & Contabilidad</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              500: '#f9572a',
+              600: '#ea4b1f',
+              700: '#c23812',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts & Lucide Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js for Dashboards -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Libraries for PDF & Excel export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    /* Custom scrollbar for POS and tables */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    .dark ::-webkit-scrollbar-thumb { background: #334155; }
+  </style>
+</head>
+<body class="h-full bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 antialiased flex flex-col md:flex-row overflow-hidden">
+
+  <!-- SIDEBAR NAVIGATION -->
+  <aside id="sidebar" class="w-full md:w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between shrink-0 z-20">
+    <div>
+      <!-- Logo Header -->
+      <div class="p-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 bg-brand-500 rounded-xl flex items-center justify-center text-white font-bold shadow-md shadow-brand-500/20">
+            <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+          </div>
+          <span class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Comercio<span class="text-brand-500">Pro</span></span>
+        </div>
+        <button id="mobileMenuClose" class="md:hidden text-slate-500 hover:text-slate-700 dark:text-slate-400">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-140px)]">
+        <button onclick="switchTab('dashboard')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-colors text-white bg-brand-500" data-tab="dashboard">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          <span>Dashboard</span>
+        </button>
+        <button onclick="switchTab('pos')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors" data-tab="pos">
+          <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+          <span>Punto de Venta</span>
+        </button>
+        <button onclick="switchTab('ventas')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors" data-tab="ventas">
+          <i data-lucide="receipt" class="w-4 h-4"></i>
+          <span>Ventas</span>
+        </button>
+        <button onclick="switchTab('productos')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors" data-tab="productos">
+          <i data-lucide="package" class="w-4 h-4"></i>
+          <span>Productos</span>
+        </button>
+        <button onclick="switchTab('inventario')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors" data-tab="inventario">
+          <i data-lucide="boxes" class="w-4 h-4"></i>
+          <span>Inventario</span>
+        </button>
+        <button onclick="switchTab('compras')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors" data-tab="compras">
+          <i data-lucide="file-text" class="w-4 h-4"></i>
+          <span>Compras</span>
+        </button>
+        <button onclick="switchTab('proveedores')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors" data-tab="proveedores">
+          <i data-lucide="truck" class="w-4 h-4"></i>
+          <span>Proveedores</span>
+        </button>
+        <button onclick="switchTab('clientes')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors" data-tab="clientes">
+          <i data-lucide="users" class="w-4 h-4"></i>
+          <span>Clientes</span>
+        </button>
+        <button onclick="switchTab('caja')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors" data-tab="caja">
+          <i data-lucide="wallet" class="w-4 h-4"></i>
+          <span>Caja</span>
+        </button>
+        <button onclick="switchTab('contabilidad')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors" data-tab="contabilidad">
+          <i data-lucide="book-open" class="w-4 h-4"></i>
+          <span>Contabilidad</span>
+        </button>
+        <button onclick="switchTab('reportes')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors" data-tab="reportes">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+          <span>Reportes</span>
+        </button>
+        <button onclick="switchTab('usuarios')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors" data-tab="usuarios">
+          <i data-lucide="user-cog" class="w-4 h-4"></i>
+          <span>Usuarios</span>
+        </button>
+        <button onclick="switchTab('configuracion')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors" data-tab="configuracion">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+          <span>Configuración</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- User Profile Footer -->
+    <div class="p-4 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-semibold flex items-center justify-center text-sm">
+          EH
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-none">Elias Hughes</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Administrador</p>
+        </div>
+      </div>
+      <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors" title="Cerrar Sesión">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-1 flex flex-col h-full overflow-hidden">
+    
+    <!-- TOP HEADER BAR -->
+    <header class="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between shrink-0 z-10">
+      <div class="flex items-center space-x-4">
+        <button id="mobileMenuOpen" class="md:hidden text-slate-500 hover:text-slate-700 dark:text-slate-400">
+          <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+        <h1 id="pageTitle" class="text-xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <!-- Cash Status Pill -->
+        <div id="cajaStatusBadge" class="hidden sm:flex items-center space-x-2 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 rounded-full text-xs font-semibold">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Caja Abierta</span>
+        </div>
+
+        <!-- Theme Toggle Button -->
+        <button id="themeToggleBtn" class="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800 transition-colors" title="Cambiar Tema">
+          <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
+          <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- CONTENT BODY (SCROLLABLE) -->
+    <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+
+      <!-- ================= 1. DASHBOARD TAB ================= -->
+      <section id="tab-dashboard" class="tab-content space-y-6">
+        <!-- Top Metrics Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Metric Card 1 -->
+          <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-start justify-between">
+            <div>
+              <p class="text-xs font-semibold tracking-wider text-slate-400 uppercase">Ventas Hoy</p>
+              <h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-1" id="dashVentasHoy">RD$ 4,206.70</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" id="dashVentasHoyCount">10 transacciones</p>
+            </div>
+            <div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
+              <i data-lucide="banknote" class="w-5 h-5"></i>
+            </div>
+          </div>
+
+          <!-- Metric Card 2 -->
+          <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-start justify-between">
+            <div>
+              <p class="text-xs font-semibold tracking-wider text-slate-400 uppercase">Esta Semana</p>
+              <h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-1">RD$ 4,206.70</h3>
+            </div>
+            <div class="p-3 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl">
+              <i data-lucide="line-chart" class="w-5 h-5"></i>
+            </div>
+          </div>
+
+          <!-- Metric Card 3 -->
+          <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-start justify-between">
+            <div>
+              <p class="text-xs font-semibold tracking-wider text-slate-400 uppercase">Este Mes</p>
+              <h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-1">RD$ 4,206.70</h3>
+              <p class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1">▲ 100% vs mes anterior</p>
+            </div>
+            <div class="p-3 bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 rounded-xl">
+              <i data-lucide="trending-up" class="w-5 h-5"></i>
+            </div>
+          </div>
+
+          <!-- Metric Card 4 -->
+          <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-start justify-between">
+            <div>
+              <p class="text-xs font-semibold tracking-wider text-slate-400 uppercase">Este Año</p>
+              <h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-1">RD$ 4,206.70</h3>
+            </div>
+            <div class="p-3 bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 rounded-xl">
+              <i data-lucide="coins" class="w-5 h-5"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secondary Metrics Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-start justify-between">
+            <div>
+              <p class="text-xs font-semibold tracking-wider text-slate-400 uppercase">Utilidad Bruta (Mes)</p>
+              <h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-1">RD$ 775.58</h3>
+            </div>
+            <div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
+              <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-start justify-between">
+            <div>
+              <p class="text-xs font-semibold tracking-wider text-slate-400 uppercase">Ticket Promedio</p>
+              <h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-1">RD$ 420.67</h3>
+            </div>
+            <div class="p-3 bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 rounded-xl">
+              <i data-lucide="ticket" class="w-5 h-5"></i>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-start justify-between">
+            <div>
+              <p class="text-xs font-semibold tracking-wider text-slate-400 uppercase">Valor Inventario</p>
+              <h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-1">RD$ 62,906.32</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">24 productos</p>
+            </div>
+            <div class="p-3 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl">
+              <i data-lucide="box" class="w-5 h-5"></i>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-start justify-between">
+            <div>
+              <p class="text-xs font-semibold tracking-wider text-slate-400 uppercase">Estado de Caja</p>
+              <h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-1" id="dashEstadoCajaText">Cerrada</h3>
+            </div>
+            <div id="dashEstadoCajaIcon" class="p-3 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl">
+              <i data-lucide="x-circle" class="w-5 h-5"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+            <h4 class="text-base font-bold text-slate-900 dark:text-white mb-4">Ventas últimos 7 días</h4>
+            <div class="h-64">
+              <canvas id="sales7DaysChart"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+            <h4 class="text-base font-bold text-slate-900 dark:text-white mb-4">Más vendidos</h4>
+            <div class="h-64">
+              <canvas id="topProductsChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hourly Sales Chart -->
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+          <h4 class="text-base font-bold text-slate-900 dark:text-white mb-4">Ventas por hora (hoy)</h4>
+          <div class="h-56">
+            <canvas id="hourlySalesChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Stock Alerts Widgets Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Bajo Stock -->
+          <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+            <div class="flex items-center space-x-2 text-amber-500 font-bold mb-3">
+              <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+              <span>Bajo stock</span>
+            </div>
+            <div class="text-sm text-slate-500 dark:text-slate-400 py-4 text-center">
+              Inventario saludable ✓
+            </div>
+          </div>
+
+          <!-- Vencidos / Por vencer -->
+          <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+            <div class="flex items-center space-x-2 text-rose-500 font-bold mb-3">
+              <i data-lucide="clock" class="w-5 h-5"></i>
+              <span>Vencidos / por vencer</span>
+            </div>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                <span class="font-medium">Leche Rica 1L</span>
+                <span class="text-slate-400">20 ago de 2026</span>
+              </div>
+              <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                <span class="font-medium">Queso Geo 1lb</span>
+                <span class="text-slate-400">20 ago de 2026</span>
+              </div>
+              <div class="flex justify-between py-1">
+                <span class="font-medium">Yogurt Yoplait</span>
+                <span class="text-slate-400">20 ago de 2026</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sin Movimiento -->
+          <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+            <div class="flex items-center space-x-2 text-blue-500 font-bold mb-3">
+              <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+              <span>Sin movimiento</span>
+            </div>
+            <div class="space-y-1.5 text-xs max-h-36 overflow-y-auto pr-1">
+              <div class="flex justify-between"><span class="text-slate-700 dark:text-slate-300">Habichuelas Rojas 1lb</span><span class="font-semibold text-slate-400">60</span></div>
+              <div class="flex justify-between"><span class="text-slate-700 dark:text-slate-300">Coca-Cola 2L</span><span class="font-semibold text-slate-400">50</span></div>
+              <div class="flex justify-between"><span class="text-slate-700 dark:text-slate-300">Jugo Rica 1L</span><span class="font-semibold text-slate-400">35</span></div>
+              <div class="flex justify-between"><span class="text-slate-700 dark:text-slate-300">Cerveza Presidente 650ml</span><span class="font-semibold text-slate-400">48</span></div>
+              <div class="flex justify-between"><span class="text-slate-700 dark:text-slate-300">Detergente Ace 1kg</span><span class="font-semibold text-slate-400">25</span></div>
+              <div class="flex justify-between"><span class="text-slate-700 dark:text-slate-300">Cloro Clorox 1gl</span><span class="font-semibold text-slate-400">20</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity Audit Log Table -->
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+          <div class="flex items-center space-x-2 text-slate-900 dark:text-white font-bold">
+            <i data-lucide="activity" class="w-5 h-5 text-brand-500"></i>
+            <span>Actividad reciente</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <tbody id="auditLogsBody" class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                <!-- Dynamic logs inserted here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Bottom Summary Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center space-x-4">
+            <div class="p-3 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl">
+              <i data-lucide="users" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-400 uppercase">CLIENTES</p>
+              <h3 class="text-2xl font-bold text-slate-900 dark:text-white">4</h3>
+            </div>
+          </div>
+          <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center space-x-4">
+            <div class="p-3 bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 rounded-xl">
+              <i data-lucide="handshake" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-400 uppercase">PROVEEDORES</p>
+              <h3 class="text-2xl font-bold text-slate-900 dark:text-white">5</h3>
+            </div>
+          </div>
+          <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center space-x-4">
+            <div class="p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl">
+              <i data-lucide="refresh-cw" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-400 uppercase">CUENTAS X COBRAR</p>
+              <h3 class="text-xl font-bold text-slate-900 dark:text-white">RD$ 436.60</h3>
+            </div>
+          </div>
+          <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center space-x-4">
+            <div class="p-3 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl">
+              <i data-lucide="refresh-cw" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-400 uppercase">CUENTAS X PAGAR</p>
+              <h3 class="text-xl font-bold text-slate-900 dark:text-white">RD$ 1,770.00</h3>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 2. POS TERMINAL TAB ================= -->
+      <section id="tab-pos" class="tab-content hidden h-full">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full items-start">
+          
+          <!-- LEFT: Search + Category Filters + Product Grid (8 Cols) -->
+          <div class="lg:col-span-8 space-y-4">
+            
+            <!-- Barcode / Search Input -->
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i data-lucide="scan-barcode" class="w-5 h-5"></i>
+              </div>
+              <input type="text" id="posSearchInput" placeholder="Escanear código de barras o buscar producto..." class="w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-900 border border-brand-500 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-sm text-sm">
+            </div>
+
+            <!-- Categories Horizontal Pills -->
+            <div class="flex items-center space-x-2 overflow-x-auto pb-1" id="categoryPills">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Product Cards Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[calc(100vh-270px)] overflow-y-auto pr-1" id="posProductGrid">
+              <!-- Dynamic product cards -->
+            </div>
+          </div>
+
+          <!-- RIGHT: Cart Sidebar (4 Cols) -->
+          <div class="lg:col-span-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col h-[calc(100vh-140px)] sticky top-0">
+            <!-- Cart Header -->
+            <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="shopping-cart" class="w-5 h-5 text-brand-500"></i>
+                <h3 class="font-bold text-slate-900 dark:text-white">Carrito (<span id="cartItemCount">0</span>)</h3>
+              </div>
+              <button onclick="clearCart()" class="text-xs text-rose-500 hover:text-rose-700 font-semibold hidden" id="clearCartBtn">Vaciar</button>
+            </div>
+
+            <!-- Cart Items List -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-3" id="cartItemsContainer">
+              <!-- Empty state default -->
+              <div class="h-full flex flex-col items-center justify-center text-slate-400 space-y-2 py-12">
+                <i data-lucide="shopping-bag" class="w-10 h-10 stroke-1 text-slate-300 dark:text-slate-700"></i>
+                <p class="text-xs">Agrega productos para comenzar.</p>
+              </div>
+            </div>
+
+            <!-- Cart Footer Summary -->
+            <div class="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-3 rounded-b-2xl">
+              <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+                <span>Subtotal</span>
+                <span class="font-medium text-slate-900 dark:text-white" id="cartSubtotal">RD$ 0.00</span>
+              </div>
+              <div class="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
+                <span>Descuento</span>
+                <input type="number" id="cartDiscountInput" value="0" min="0" class="w-16 px-2 py-0.5 border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-right text-xs focus:ring-1 focus:ring-brand-500">
+              </div>
+              <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+                <span>ITBIS (18%)</span>
+                <span class="font-medium text-slate-900 dark:text-white" id="cartTax">RD$ 0.00</span>
+              </div>
+              
+              <div class="pt-2 border-t border-slate-200 dark:border-slate-800 flex justify-between items-baseline">
+                <span class="font-bold text-slate-900 dark:text-white uppercase text-sm">TOTAL</span>
+                <span class="text-2xl font-extrabold text-brand-500" id="cartTotal">RD$ 0.00</span>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="grid grid-cols-2 gap-2 pt-1">
+                <button onclick="createQuote()" class="w-full py-2.5 px-3 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs rounded-xl flex items-center justify-center space-x-1.5 transition-colors">
+                  <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                  <span>Cotizar</span>
+                </button>
+                <button onclick="openCheckoutModal()" class="w-full py-2.5 px-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl flex items-center justify-center space-x-1.5 shadow-md shadow-emerald-500/20 transition-colors">
+                  <i data-lucide="credit-card" class="w-4 h-4"></i>
+                  <span>Cobrar</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 3. CONTABILIDAD TAB ================= -->
+      <section id="tab-contabilidad" class="tab-content hidden space-y-6">
+        <!-- Sub-navigation Tabs -->
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+          <div class="flex items-center space-x-2 overflow-x-auto">
+            <button onclick="switchAccountingTab('diario')" class="acct-tab-btn px-4 py-2 rounded-full text-xs font-semibold bg-brand-500 text-white" data-acct-tab="diario">Libro Diario</button>
+            <button onclick="switchAccountingTab('catalogo')" class="acct-tab-btn px-4 py-2 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200" data-acct-tab="catalogo">Catálogo de Cuentas</button>
+            <button onclick="switchAccountingTab('comprobacion')" class="acct-tab-btn px-4 py-2 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200" data-acct-tab="comprobacion">Balance de Comprobación</button>
+            <button onclick="switchAccountingTab('resultados')" class="acct-tab-btn px-4 py-2 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200" data-acct-tab="resultados">Estado de Resultados</button>
+            <button onclick="switchAccountingTab('general')" class="acct-tab-btn px-4 py-2 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200" data-acct-tab="general">Balance General</button>
+          </div>
+          <button onclick="openManualEntryModal()" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>+ Asiento manual</span>
+          </button>
+        </div>
+
+        <!-- Libro Diario Content -->
+        <div id="acct-content-diario" class="space-y-4">
+          <!-- Journal Entries will render here -->
+        </div>
+
+        <!-- Catálogo de Cuentas Content -->
+        <div id="acct-content-catalogo" class="hidden bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <h4 class="text-base font-bold text-slate-900 dark:text-white mb-4">Catálogo de Cuentas Contables</h4>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase tracking-wider font-semibold">
+                  <th class="py-2.5 px-3">Código</th>
+                  <th class="py-2.5 px-3">Nombre de Cuenta</th>
+                  <th class="py-2.5 px-3">Tipo</th>
+                  <th class="py-2.5 px-3">Naturaleza</th>
+                  <th class="py-2.5 px-3 text-right">Saldo Actual</th>
+                </tr>
+              </thead>
+              <tbody id="chartOfAccountsBody" class="divide-y divide-slate-100 dark:divide-slate-800">
+                <!-- Inserted by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Placeholder states for other sub-tabs -->
+        <div id="acct-content-comprobacion" class="hidden bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <h4 class="text-base font-bold text-slate-900 dark:text-white mb-2">Balance de Comprobación</h4>
+          <p class="text-xs text-slate-400 mb-4">Verificación de Débitos = Créditos</p>
+          <div id="comprobacionTableWrapper"></div>
+        </div>
+        
+        <div id="acct-content-resultados" class="hidden bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <h4 class="text-base font-bold text-slate-900 dark:text-white mb-2">Estado de Resultados (P&L)</h4>
+          <div id="resultadosContent"></div>
+        </div>
+
+        <div id="acct-content-general" class="hidden bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <h4 class="text-base font-bold text-slate-900 dark:text-white mb-2">Balance General</h4>
+          <div id="balanceGeneralContent"></div>
+        </div>
+      </section>
+
+      <!-- ================= 4. REPORTES TAB ================= -->
+      <section id="tab-reportes" class="tab-content hidden space-y-6">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">Reportes</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Genera y descarga reportes profesionales en PDF, Excel o CSV. Todos los reportes reflejan datos en tiempo real del sistema.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Report 1 -->
+          <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            <div class="flex items-start space-x-4">
+              <div class="p-3 bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 rounded-xl">
+                <i data-lucide="receipt" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-900 dark:text-white">Reporte de Ventas</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Todas las facturas con subtotal, ITBIS y total.</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 pt-2">
+              <button onclick="exportReport('ventas', 'pdf')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold flex items-center space-x-1">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> <span>PDF</span>
+              </button>
+              <button onclick="exportReport('ventas', 'excel')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold flex items-center space-x-1">
+                <i data-lucide="sheet" class="w-3.5 h-3.5"></i> <span>Excel</span>
+              </button>
+              <button onclick="exportReport('ventas', 'csv')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold flex items-center space-x-1">
+                <i data-lucide="file-code" class="w-3.5 h-3.5"></i> <span>CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Report 2 -->
+          <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            <div class="flex items-start space-x-4">
+              <div class="p-3 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl">
+                <i data-lucide="box" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-900 dark:text-white">Reporte de Inventario</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Existencias, costos, valor y estado de cada producto.</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 pt-2">
+              <button onclick="exportReport('inventario', 'pdf')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold flex items-center space-x-1">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> <span>PDF</span>
+              </button>
+              <button onclick="exportReport('inventario', 'excel')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold flex items-center space-x-1">
+                <i data-lucide="sheet" class="w-3.5 h-3.5"></i> <span>Excel</span>
+              </button>
+              <button onclick="exportReport('inventario', 'csv')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold flex items-center space-x-1">
+                <i data-lucide="file-code" class="w-3.5 h-3.5"></i> <span>CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Report 3 -->
+          <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            <div class="flex items-start space-x-4">
+              <div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                <i data-lucide="pie-chart" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-900 dark:text-white">Estado de Resultados</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Ingresos, gastos y utilidad neta del período.</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 pt-2">
+              <button onclick="exportReport('resultados', 'pdf')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold flex items-center space-x-1">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> <span>PDF</span>
+              </button>
+              <button onclick="exportReport('resultados', 'excel')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold flex items-center space-x-1">
+                <i data-lucide="sheet" class="w-3.5 h-3.5"></i> <span>Excel</span>
+              </button>
+              <button onclick="exportReport('resultados', 'csv')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold flex items-center space-x-1">
+                <i data-lucide="file-code" class="w-3.5 h-3.5"></i> <span>CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Report 4 -->
+          <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            <div class="flex items-start space-x-4">
+              <div class="p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl">
+                <i data-lucide="scale" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-900 dark:text-white">Balance General</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Activos, pasivos y capital de la empresa.</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 pt-2">
+              <button onclick="exportReport('balance', 'pdf')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold flex items-center space-x-1">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> <span>PDF</span>
+              </button>
+              <button onclick="exportReport('balance', 'excel')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold flex items-center space-x-1">
+                <i data-lucide="sheet" class="w-3.5 h-3.5"></i> <span>Excel</span>
+              </button>
+              <button onclick="exportReport('balance', 'csv')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold flex items-center space-x-1">
+                <i data-lucide="file-code" class="w-3.5 h-3.5"></i> <span>CSV</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 5. PRODUCTOS / INVENTARIO TAB ================= -->
+      <section id="tab-productos" class="tab-content hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">Gestión de Productos</h3>
+          <button onclick="openNewProductModal()" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>Nuevo Producto</span>
+          </button>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase font-semibold">
+                  <th class="py-3 px-4">Producto</th>
+                  <th class="py-3 px-4">Categoría</th>
+                  <th class="py-3 px-4 text-right">Precio Venta</th>
+                  <th class="py-3 px-4 text-right">Stock</th>
+                  <th class="py-3 px-4 text-center">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="inventoryTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
+                <!-- Products rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Generic Generic Sections for remaining links -->
+      <section id="tab-ventas" class="tab-content hidden space-y-4">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Historial de Ventas</h3>
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400 font-semibold">
+                <th class="py-2">No. Factura</th>
+                <th class="py-2">Fecha</th>
+                <th class="py-2">Cliente</th>
+                <th class="py-2 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody id="salesHistoryBody" class="divide-y divide-slate-100 dark:divide-slate-800">
+              <!-- Rendered JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="tab-inventario" class="tab-content hidden space-y-4">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Ajustes de Inventario (Kardex)</h3>
+        <p class="text-xs text-slate-500">Realiza entradas, salidas o ajustes directos de stock.</p>
+        <button onclick="openStockAdjustModal()" class="px-4 py-2 bg-brand-500 text-white font-bold text-xs rounded-xl">+ Nuevo Ajuste</button>
+      </section>
+
+      <section id="tab-compras" class="tab-content hidden space-y-4">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Órdenes de Compra</h3>
+        <p class="text-xs text-slate-500">Registro de compras a proveedores con entrada a inventario y crédito a Cuentas por Pagar.</p>
+      </section>
+
+      <section id="tab-caja" class="tab-content hidden space-y-4">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Control de Caja Chicote / Cuadre</h3>
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-md space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-400">Estado Actual:</span>
+            <span id="cajaCurrentStatusText" class="font-bold text-rose-500">Cerrada</span>
+          </div>
+          <button id="toggleCajaBtn" onclick="toggleCajaStatus()" class="w-full py-3 bg-brand-500 text-white font-bold text-sm rounded-xl shadow-md">Abrir Caja con Fondo Inicial</button>
+        </div>
+      </section>
+
+      <section id="tab-proveedores" class="tab-content hidden space-y-4"><h3 class="text-lg font-bold">Proveedores (5)</h3></section>
+      <section id="tab-clientes" class="tab-content hidden space-y-4"><h3 class="text-lg font-bold">Clientes (4)</h3></section>
+      <section id="tab-usuarios" class="tab-content hidden space-y-4"><h3 class="text-lg font-bold">Usuarios & Roles</h3></section>
+      <section id="tab-configuracion" class="tab-content hidden space-y-4"><h3 class="text-lg font-bold">Configuración del Sistema</h3></section>
+
+    </div>
+  </main>
+
+  <!-- CHECKOUT MODAL -->
+  <div id="checkoutModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-md p-6 space-y-6">
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Procesar Pago</h3>
+        <button onclick="closeCheckoutModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Monto a Cobrar</label>
+          <div class="text-3xl font-extrabold text-brand-500" id="modalPayTotal">RD$ 0.00</div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Método de Pago</label>
+          <select id="payMethod" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold">
+            <option value="efectivo">Efectivo</option>
+            <option value="tarjeta">Tarjeta de Crédito / Débito</option>
+            <option value="transferencia">Transferencia Bancaria</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Efectivo Recibido (RD$)</label>
+          <input type="number" id="cashTenderedInput" placeholder="0.00" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-bold focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div class="p-3 bg-slate-100 dark:bg-slate-800/60 rounded-xl flex justify-between items-center text-sm font-semibold">
+          <span>Devuelta / Cambio:</span>
+          <span class="text-emerald-600 dark:text-emerald-400 font-bold text-base" id="cashChangeText">RD$ 0.00</span>
+        </div>
+      </div>
+
+      <button onclick="completeSale()" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-base rounded-xl shadow-lg shadow-emerald-500/30 transition-all">
+        Completar Venta e Imprimir
+      </button>
+    </div>
+  </div>
+
+  <!-- MANUAL ENTRY MODAL (CONTABILIDAD) -->
+  <div id="manualEntryModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-lg p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Nuevo Asiento Contable Manual</h3>
+        <button onclick="closeManualEntryModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-400 mb-1">Concepto / Referencia</label>
+          <input type="text" id="manualConcept" placeholder="Ej: Ajuste de caja menor" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-400 mb-1">Cuenta Débito</label>
+            <select id="manualDebitAccount" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+              <option value="1101">1101 - Caja</option>
+              <option value="1104">1104 - Inventario de Mercancía</option>
+              <option value="5101">5101 - Costo de Ventas</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-400 mb-1">Monto Débito (RD$)</label>
+            <input type="number" id="manualDebitAmount" placeholder="0.00" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-400 mb-1">Cuenta Crédito</label>
+            <select id="manualCreditAccount" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+              <option value="4101">4101 - Ingresos por Ventas</option>
+              <option value="2102">2102 - ITBIS por Pagar</option>
+              <option value="1101">1101 - Caja</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-400 mb-1">Monto Crédito (RD$)</label>
+            <input type="number" id="manualCreditAmount" placeholder="0.00" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+          </div>
+        </div>
+      </div>
+
+      <button onclick="saveManualEntry()" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm rounded-xl">
+        Registrar Asiento
+      </button>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
+  <script>
+    /* GLOBAL APPLICATION STATE */
+    const state = {
+      isDarkMode: false,
+      cajaAbierta: false,
+      cart: [],
+      discount: 0,
+      
+      products: [
+        { id: 1, name: 'Aceite Vegetal 1L', price: 185.00, stock: 34, category: 'Abarrotes', code: '74600123' },
+        { id: 2, name: 'Agua Cristal 600ml', price: 25.00, stock: 115, category: 'Bebidas', code: '74600124' },
+        { id: 3, name: 'Arroz Selecto 5lb', price: 265.00, stock: 34, category: 'Abarrotes', code: '74600125' },
+        { id: 4, name: 'Cerveza Presidente 650ml', price: 150.00, stock: 48, category: 'Bebidas', code: '74600126' },
+        { id: 5, name: 'Cloro Clorox 1gl', price: 155.00, stock: 20, category: 'Limpieza', code: '74600127' },
+        { id: 6, name: 'Coca-Cola 2L', price: 120.00, stock: 50, category: 'Bebidas', code: '74600128' },
+        { id: 7, name: 'Desodorante Rexona', price: 165.00, stock: 22, category: 'Higiene', code: '74600129' },
+        { id: 8, name: 'Detergente Ace 1kg', price: 175.00, stock: 25, category: 'Limpieza', code: '74600130' },
+        { id: 9, name: 'Doritos Nacho', price: 85.00, stock: 60, category: 'Snacks', code: '74600131' },
+        { id: 10, name: 'FIXTEST prod', price: 25.00, stock: 50, category: 'Abarrotes', code: '74600132' },
+        { id: 11, name: 'Galletas Oreo', price: 65.00, stock: 70, category: 'Snacks', code: '74600133' },
+        { id: 12, name: 'Habichuelas Rojas 1lb', price: 65.00, stock: 60, category: 'Abarrotes', code: '74600134' },
+        { id: 13, name: 'Jabón de Cuaba', price: 30.00, stock: 80, category: 'Higiene', code: '74600135' },
+        { id: 14, name: 'Jugo Rica 1L', price: 90.00, stock: 35, category: 'Bebidas', code: '74600136' },
+        { id: 15, name: 'Leche Rica 1L', price: 105.00, stock: 30, category: 'Lácteos', code: '74600137' },
+        { id: 16, name: 'Papas Sabritas', price: 55.00, stock: 55, category: 'Snacks', code: '74600138' },
+        { id: 17, name: 'Papel Higiénico Scott 4u', price: 135.00, stock: 40, category: 'Higiene', code: '74600139' },
+        { id: 18, name: 'Pasta Dental Colgate', price: 98.00, stock: 38, category: 'Higiene', code: '74600140' },
+        { id: 19, name: 'Queso Geo 1lb', price: 210.00, stock: 15, category: 'Lácteos', code: '74600141' },
+        { id: 20, name: 'Shampoo Head&Shoulders', price: 240.00, stock: 18, category: 'Higiene', code: '74600142' },
+        { id: 21, name: 'Yogurt Yoplait', price: 68.00, stock: 68, category: 'Lácteos', code: '74600143' }
+      ],
+
+      auditLogs: [
+        { type: 'RETURN', user: 'Elias Hughes', action: 'credit_note — NC-000003 de FAC-000011', amount: 'RD$29.5', time: '01/08/2026, 11:58 a. m.' },
+        { type: 'LOGIN', user: 'Elias Hughes', action: 'auth — Inicio de sesión', amount: '', time: '01/08/2026, 11:58 a. m.' },
+        { type: 'LOGIN', user: 'Elias Hughes', action: 'auth — Inicio de sesión', amount: '', time: '01/08/2026, 11:57 a. m.' },
+        { type: 'PURCHASE', user: 'Elias Hughes', action: 'purchase', amount: 'RD$885.0', time: '01/08/2026, 11:57 a. m.' },
+        { type: 'ADJUST', user: 'Elias Hughes', action: 'product — adjust 100.0', amount: '', time: '01/08/2026, 11:57 a. m.' },
+        { type: 'ADJUST', user: 'Elias Hughes', action: 'product — out 5.0', amount: '', time: '01/08/2026, 11:57 a. m.' },
+        { type: 'LOGIN', user: 'TEST_Cajero', action: 'auth — Inicio de sesión', amount: '', time: '01/08/2026, 11:57 a. m.' },
+        { type: 'ADJUST', user: 'Elias Hughes', action: 'product — in 10.0', amount: '', time: '01/08/2026, 11:57 a. m.' }
+      ],
+
+      accountingEntries: [
+        {
+          id: 'NC-000003',
+          title: 'Nota de crédito NC-000003',
+          badge: 'RETURN',
+          ref: 'NC-000003 · 01/08/2026, 11:58 a. m.',
+          rows: [
+            { code: '4101', name: 'Ingresos por Ventas', debit: 25.00, credit: 0 },
+            { code: '2102', name: 'ITBIS por Pagar', debit: 4.50, credit: 0 },
+            { code: '1101', name: 'Caja', debit: 0, credit: 29.50 },
+            { code: '1104', name: 'Inventario de Mercancía', debit: 15.00, credit: 0 },
+            { code: '5101', name: 'Costo de Ventas', debit: 0, credit: 15.00 }
+          ]
+        },
+        {
+          id: 'TEST-PO-1',
+          title: 'Compra TEST-PO-1',
+          badge: 'PURCHASE',
+          ref: 'TEST-PO-1 · 01/08/2026, 11:57 a. m.',
+          rows: [
+            { code: '1104', name: 'Inventario de Mercancía', debit: 750.00, credit: 0 },
+            { code: '1105', name: 'ITBIS Pagado (Adelantado)', debit: 135.00, credit: 0 },
+            { code: '2101', name: 'Cuentas por Pagar', debit: 0, credit: 885.00 }
+          ]
+        },
+        {
+          id: 'FAC-000012',
+          title: 'Venta FAC-000012',
+          badge: 'SALE',
+          ref: 'FAC-000012 · 01/08/2026, 11:57 a. m.',
+          rows: [
+            { code: '1101', name: 'Caja', debit: 141.60, credit: 0 },
+            { code: '4101', name: 'Ingresos por Ventas', debit: 0, credit: 120.00 },
+            { code: '2102', name: 'ITBIS por Pagar', debit: 0, credit: 21.60 },
+            { code: '5101', name: 'Costo de Ventas', debit: 85.00, credit: 0 },
+            { code: '1104', name: 'Inventario de Mercancía', debit: 0, credit: 85.00 }
+          ]
+        }
+      ],
+
+      chartOfAccounts: [
+        { code: '1101', name: 'Caja General', type: 'Activo', nature: 'Débito', balance: 4236.10 },
+        { code: '1104', name: 'Inventario de Mercancía', type: 'Activo', nature: 'Débito', balance: 62906.32 },
+        { code: '1105', name: 'ITBIS Pagado (Adelantado)', type: 'Activo', nature: 'Débito', balance: 135.00 },
+        { code: '2101', name: 'Cuentas por Pagar (Proveedores)', type: 'Pasivo', nature: 'Crédito', balance: 1770.00 },
+        { code: '2102', name: 'ITBIS por Pagar', type: 'Pasivo', nature: 'Crédito', balance: 641.70 },
+        { code: '4101', name: 'Ingresos por Ventas', type: 'Ingresos', nature: 'Crédito', balance: 4206.70 },
+        { code: '5101', name: 'Costo de Ventas', type: 'Costo', nature: 'Débito', balance: 3431.12 }
+      ],
+
+      selectedCategory: 'Todos'
+    };
+
+    /* INITIALIZATION */
+    window.onload = function() {
+      lucide.createIcons();
+      initTheme();
+      renderAuditLogs();
+      renderPOSCategories();
+      renderPOSProducts();
+      renderAccountingEntries();
+      renderChartOfAccounts();
+      renderInventoryTable();
+      initDashboardCharts();
+
+      // Search input handler
+      document.getElementById('posSearchInput').addEventListener('input', (e) => {
+        renderPOSProducts(e.target.value);
+      });
+
+      // Discount input handler
+      document.getElementById('cartDiscountInput').addEventListener('input', (e) => {
+        state.discount = parseFloat(e.target.value) || 0;
+        updateCartUI();
+      });
+
+      // Cash Tendered handler
+      document.getElementById('cashTenderedInput').addEventListener('input', (e) => {
+        const tendered = parseFloat(e.target.value) || 0;
+        const total = getCartTotal();
+        const change = Math.max(0, tendered - total);
+        document.getElementById('cashChangeText').innerText = `RD$ ${change.toFixed(2)}`;
+      });
+    };
+
+    function initTheme() {
+      const toggleBtn = document.getElementById('themeToggleBtn');
+      toggleBtn.addEventListener('click', () => {
+        state.isDarkMode = !state.isDarkMode;
+        if(state.isDarkMode) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      });
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      const activeTab = document.getElementById(`tab-${tabId}`);
+      if(activeTab) activeTab.classList.remove('hidden');
+
+      // Update Nav buttons styling
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        if(btn.dataset.tab === tabId) {
+          btn.className = "nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-white bg-brand-500 shadow-sm";
+        } else {
+          btn.className = "nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors";
+        }
+      });
+
+      // Set Page Title
+      const titles = {
+        dashboard: 'Dashboard',
+        pos: 'Punto de Venta',
+        ventas: 'Ventas',
+        productos: 'Productos',
+        inventario: 'Inventario',
+        compras: 'Compras',
+        proveedores: 'Proveedores',
+        clientes: 'Clientes',
+        caja: 'Caja',
+        contabilidad: 'Contabilidad',
+        reportes: 'Reportes',
+        usuarios: 'Usuarios',
+        configuracion: 'Configuración'
+      };
+      document.getElementById('pageTitle').innerText = titles[tabId] || 'ComercioPro';
+    }
+
+    function initDashboardCharts() {
+      // 1. Sales 7 days
+      const ctx1 = document.getElementById('sales7DaysChart').getContext('2d');
+      new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: ['26/07', '27/07', '28/07', '29/07', '30/07', '31/07', '01/08'],
+          datasets: [{
+            label: 'Ventas (RD$)',
+            data: [0, 0, 0, 0, 0, 1500, 4206.70],
+            borderColor: '#f9572a',
+            backgroundColor: 'rgba(249, 87, 42, 0.1)',
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+
+      // 2. Top Products
+      const ctx2 = document.getElementById('topProductsChart').getContext('2d');
+      new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: ['Arroz Selecto 5lb', 'Aceite Vegetal 1L', 'Agua Cristal 600ml'],
+          datasets: [{
+            data: [4200, 3100, 2400],
+            backgroundColor: ['#f9572a', '#3b82f6', '#10b981'],
+            borderRadius: 6
+          }]
+        },
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+
+      // 3. Hourly Sales
+      const ctx3 = document.getElementById('hourlySalesChart').getContext('2d');
+      new Chart(ctx3, {
+        type: 'bar',
+        data: {
+          labels: ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'],
+          datasets: [{
+            data: [0, 0, 0, 4206.70, 0, 0, 0, 0, 0, 0],
+            backgroundColor: '#3b82f6',
+            borderRadius: 6
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+    }
+
+    function renderPOSCategories() {
+      const categories = ['Todos', 'Abarrotes', 'Bebidas', 'Limpieza', 'Lácteos', 'Snacks', 'Higiene'];
+      const container = document.getElementById('categoryPills');
+      container.innerHTML = categories.map(cat => `
+        <button onclick="filterCategory('${cat}')" class="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${cat === state.selectedCategory ? 'bg-brand-500 text-white' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100'}">
+          ${cat}
+        </button>
+      `).join('');
+    }
+
+    function filterCategory(cat) {
+      state.selectedCategory = cat;
+      renderPOSCategories();
+      renderPOSProducts();
+    }
+
+    function renderPOSProducts(searchQuery = '') {
+      const grid = document.getElementById('posProductGrid');
+      const filtered = state.products.filter(p => {
+        const matchesCat = state.selectedCategory === 'Todos' || p.category === state.selectedCategory;
+        const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.code.includes(searchQuery);
+        return matchesCat && matchesSearch;
+      });
+
+      grid.innerHTML = filtered.map(p => `
+        <div onclick="addToCart(${p.id})" class="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 hover:border-brand-500 cursor-pointer shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32">
+          <div>
+            <h5 class="font-bold text-xs text-slate-900 dark:text-white line-clamp-2">${p.name}</h5>
+          </div>
+          <div>
+            <div class="text-brand-500 font-extrabold text-sm">RD$ ${p.price.toFixed(2)}</div>
+            <div class="text-[10px] text-slate-400">Stock: ${p.stock}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function addToCart(productId) {
+      const product = state.products.find(p => p.id === productId);
+      if(!product || product.stock <= 0) {
+        showToast('Producto sin stock disponible', 'error');
+        return;
+      }
+      const existing = state.cart.find(item => item.product.id === productId);
+      if(existing) {
+        if(existing.qty + 1 > product.stock) {
+          showToast('Stock máximo alcanzado', 'warning');
+          return;
+        }
+        existing.qty += 1;
+      } else {
+        state.cart.push({ product, qty: 1 });
+      }
+      updateCartUI();
+    }
+
+    function updateCartUI() {
+      const container = document.getElementById('cartItemsContainer');
+      const countEl = document.getElementById('cartItemCount');
+      const clearBtn = document.getElementById('clearCartBtn');
+
+      if(state.cart.length === 0) {
+        container.innerHTML = `
+          <div class="h-full flex flex-col items-center justify-center text-slate-400 space-y-2 py-12">
+            <i data-lucide="shopping-bag" class="w-10 h-10 stroke-1 text-slate-300 dark:text-slate-700"></i>
+            <p class="text-xs">Agrega productos para comenzar.</p>
+          </div>
+        `;
+        countEl.innerText = '0';
+        clearBtn.classList.add('hidden');
+      } else {
+        clearBtn.classList.remove('hidden');
+        countEl.innerText = state.cart.reduce((acc, item) => acc + item.qty, 0);
+
+        container.innerHTML = state.cart.map((item, idx) => `
+          <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl text-xs space-x-2">
+            <div class="flex-1">
+              <p class="font-bold text-slate-800 dark:text-white">${item.product.name}</p>
+              <p class="text-[11px] text-slate-400">RD$ ${item.product.price.toFixed(2)}</p>
+            </div>
+            <div class="flex items-center space-x-1">
+              <button onclick="changeCartQty(${idx}, -1)" class="w-6 h-6 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs">-</button>
+              <span class="w-6 text-center font-bold">${item.qty}</span>
+              <button onclick="changeCartQty(${idx}, 1)" class="w-6 h-6 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs">+</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Math calculations
+      const subtotal = state.cart.reduce((acc, item) => acc + (item.product.price * item.qty), 0);
+      const tax = (subtotal - state.discount) * 0.18;
+      const total = Math.max(0, (subtotal - state.discount) + tax);
+
+      document.getElementById('cartSubtotal').innerText = `RD$ ${subtotal.toFixed(2)}`;
+      document.getElementById('cartTax').innerText = `RD$ ${tax.toFixed(2)}`;
+      document.getElementById('cartTotal').innerText = `RD$ ${total.toFixed(2)}`;
+      lucide.createIcons();
+    }
+
+    function changeCartQty(index, delta) {
+      state.cart[index].qty += delta;
+      if(state.cart[index].qty <= 0) {
+        state.cart.splice(index, 1);
+      }
+      updateCartUI();
+    }
+
+    function clearCart() {
+      state.cart = [];
+      updateCartUI();
+    }
+
+    function getCartTotal() {
+      const subtotal = state.cart.reduce((acc, item) => acc + (item.product.price * item.qty), 0);
+      const tax = (subtotal - state.discount) * 0.18;
+      return Math.max(0, (subtotal - state.discount) + tax);
+    }
+
+    function openCheckoutModal() {
+      if(state.cart.length === 0) {
+        showToast('El carrito está vacío', 'warning');
+        return;
+      }
+      const total = getCartTotal();
+      document.getElementById('modalPayTotal').innerText = `RD$ ${total.toFixed(2)}`;
+      document.getElementById('checkoutModal').classList.remove('hidden');
+    }
+
+    function closeCheckoutModal() {
+      document.getElementById('checkoutModal').classList.add('hidden');
+    }
+
+    function completeSale() {
+      const total = getCartTotal();
+      const facNum = `FAC-0000${Math.floor(Math.random() * 90) + 13}`;
+      
+      // Update inventory stock
+      state.cart.forEach(item => {
+        item.product.stock -= item.qty;
+      });
+
+      // Add audit log
+      state.auditLogs.unshift({
+        type: 'SALE',
+        user: 'Elias Hughes',
+        action: `sale — ${facNum}`,
+        amount: `RD$ ${total.toFixed(2)}`,
+        time: new Date().toLocaleString('es-DO')
+      });
+
+      // Create Accounting Entry automatically
+      const subtotal = state.cart.reduce((acc, item) => acc + (item.product.price * item.qty), 0);
+      const tax = subtotal * 0.18;
+      
+      state.accountingEntries.unshift({
+        id: facNum,
+        title: `Venta ${facNum}`,
+        badge: 'SALE',
+        ref: `${facNum} · ${new Date().toLocaleString('es-DO')}`,
+        rows: [
+          { code: '1101', name: 'Caja', debit: total, credit: 0 },
+          { code: '4101', name: 'Ingresos por Ventas', debit: 0, credit: subtotal },
+          { code: '2102', name: 'ITBIS por Pagar', debit: 0, credit: tax }
+        ]
+      });
+
+      closeCheckoutModal();
+      clearCart();
+      renderPOSProducts();
+      renderAuditLogs();
+      renderAccountingEntries();
+      showToast(`¡Venta ${facNum} procesada exitosamente!`, 'success');
+    }
+
+    function renderAccountingEntries() {
+      const container = document.getElementById('acct-content-diario');
+      container.innerHTML = state.accountingEntries.map(entry => `
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+            <div>
+              <h5 class="font-bold text-sm text-slate-900 dark:text-white">${entry.title}</h5>
+              <p class="text-[11px] text-slate-400 font-mono mt-0.5">${entry.ref}</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase ${getBadgeStyle(entry.badge)}">${entry.badge}</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs font-mono">
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                ${entry.rows.map(row => `
+                  <tr>
+                    <td class="py-1.5 px-2 w-16 text-slate-400">${row.code}</td>
+                    <td class="py-1.5 px-2 text-slate-700 dark:text-slate-300 font-sans">${row.name}</td>
+                    <td class="py-1.5 px-2 text-right w-28 text-slate-900 dark:text-white font-semibold">${row.debit > 0 ? 'RD$ ' + row.debit.toFixed(2) : ''}</td>
+                    <td class="py-1.5 px-2 text-right w-28 text-slate-900 dark:text-white font-semibold">${row.credit > 0 ? 'RD$ ' + row.credit.toFixed(2) : ''}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderChartOfAccounts() {
+      const body = document.getElementById('chartOfAccountsBody');
+      body.innerHTML = state.chartOfAccounts.map(acc => `
+        <tr>
+          <td class="py-2.5 px-3 font-mono font-bold text-brand-500">${acc.code}</td>
+          <td class="py-2.5 px-3 font-medium text-slate-800 dark:text-slate-200">${acc.name}</td>
+          <td class="py-2.5 px-3 text-slate-500">${acc.type}</td>
+          <td class="py-2.5 px-3 text-slate-500">${acc.nature}</td>
+          <td class="py-2.5 px-3 text-right font-semibold">RD$ ${acc.balance.toFixed(2)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function switchAccountingTab(subTab) {
+      document.querySelectorAll('[id^="acct-content-"]').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`acct-content-${subTab}`).classList.remove('hidden');
+
+      document.querySelectorAll('.acct-tab-btn').forEach(btn => {
+        if(btn.dataset.acctTab === subTab) {
+          btn.className = "acct-tab-btn px-4 py-2 rounded-full text-xs font-semibold bg-brand-500 text-white";
+        } else {
+          btn.className = "acct-tab-btn px-4 py-2 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200";
+        }
+      });
+    }
+
+    function openManualEntryModal() {
+      document.getElementById('manualEntryModal').classList.remove('hidden');
+    }
+    function closeManualEntryModal() {
+      document.getElementById('manualEntryModal').classList.add('hidden');
+    }
+    function saveManualEntry() {
+      const concept = document.getElementById('manualConcept').value || 'Asiento Manual';
+      const debitAcc = document.getElementById('manualDebitAccount').value;
+      const debitAmt = parseFloat(document.getElementById('manualDebitAmount').value) || 0;
+      const creditAcc = document.getElementById('manualCreditAccount').value;
+      const creditAmt = parseFloat(document.getElementById('manualCreditAmount').value) || 0;
+
+      if(debitAmt !== creditAmt || debitAmt <= 0) {
+        showToast('Debes ingresar montos iguales para Débito y Crédito (Partida Doble)', 'error');
+        return;
+      }
+
+      state.accountingEntries.unshift({
+        id: `MAN-${Date.now()}`,
+        title: concept,
+        badge: 'ADJUST',
+        ref: `MANUAL · ${new Date().toLocaleString('es-DO')}`,
+        rows: [
+          { code: debitAcc, name: getAccountName(debitAcc), debit: debitAmt, credit: 0 },
+          { code: creditAcc, name: getAccountName(creditAcc), debit: 0, credit: creditAmt }
+        ]
+      });
+
+      renderAccountingEntries();
+      closeManualEntryModal();
+      showToast('Asiento manual registrado con éxito', 'success');
+    }
+
+    function getAccountName(code) {
+      const acc = state.chartOfAccounts.find(a => a.code === code);
+      return acc ? acc.name : 'Cuenta General';
+    }
+
+    function renderInventoryTable() {
+      const body = document.getElementById('inventoryTableBody');
+      body.innerHTML = state.products.map(p => `
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+          <td class="py-3 px-4 font-bold text-slate-900 dark:text-white">${p.name}</td>
+          <td class="py-3 px-4 text-slate-500">${p.category}</td>
+          <td class="py-3 px-4 text-right font-semibold text-brand-500">RD$ ${p.price.toFixed(2)}</td>
+          <td class="py-3 px-4 text-right font-bold ${p.stock < 10 ? 'text-rose-500' : 'text-slate-800 dark:text-slate-200'}">${p.stock}</td>
+          <td class="py-3 px-4 text-center">
+            <button onclick="adjustStockPrompt(${p.id})" class="text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 px-2.5 py-1 rounded-lg font-semibold">Ajustar</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function adjustStockPrompt(productId) {
+      const p = state.products.find(item => item.id === productId);
+      if(!p) return;
+      const newQty = prompt(`Ajustar stock para ${p.name}:`, p.stock);
+      if(newQty !== null && !isNaN(newQty)) {
+        p.stock = parseInt(newQty);
+        renderInventoryTable();
+        renderPOSProducts();
+        state.auditLogs.unshift({
+          type: 'ADJUST',
+          user: 'Elias Hughes',
+          action: `product — adjust ${p.stock}`,
+          amount: '',
+          time: new Date().toLocaleString('es-DO')
+        });
+        renderAuditLogs();
+        showToast(`Stock actualizado a ${p.stock} unidades`, 'success');
+      }
+    }
+
+    function renderAuditLogs() {
+      const body = document.getElementById('auditLogsBody');
+      body.innerHTML = state.auditLogs.map(log => `
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+          <td class="py-2.5 px-2 w-20">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${getBadgeStyle(log.type)}">${log.type}</span>
+          </td>
+          <td class="py-2.5 px-2 text-slate-700 dark:text-slate-300">
+            <span class="font-bold text-slate-900 dark:text-white">${log.user}</span> · ${log.action} ${log.amount ? '— ' + log.amount : ''}
+          </td>
+          <td class="py-2.5 px-2 text-right text-slate-400 text-[11px] whitespace-nowrap">${log.time}</td>
+        </tr>
+      `).join('');
+    }
+
+    function getBadgeStyle(type) {
+      switch(type) {
+        case 'RETURN': return 'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300';
+        case 'LOGIN': return 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300';
+        case 'PURCHASE': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300';
+        case 'ADJUST': return 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300';
+        case 'SALE': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300';
+        default: return 'bg-slate-100 text-slate-700';
+      }
+    }
+
+    function exportReport(type, format) {
+      showToast(`Generando reporte de ${type.toUpperCase()} en formato ${format.toUpperCase()}...`, 'info');
+      
+      if (format === 'csv') {
+        let csvContent = "data:text/csv;charset=utf-8,No,Nombre,Monto\n1,Venta 001,4206.70\n";
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Reporte_${type}_${Date.now()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        setTimeout(() => {
+          showToast(`¡Reporte descargado correctamente!`, 'success');
+        }, 800);
+      }
+    }
+
+    function toggleCajaStatus() {
+      state.cajaAbierta = !state.cajaAbierta;
+      const statusText = document.getElementById('cajaCurrentStatusText');
+      const dashText = document.getElementById('dashEstadoCajaText');
+      const btn = document.getElementById('toggleCajaBtn');
+      const badge = document.getElementById('cajaStatusBadge');
+
+      if(state.cajaAbierta) {
+        statusText.innerText = 'Abierta';
+        statusText.className = 'font-bold text-emerald-500';
+        dashText.innerText = 'Abierta';
+        btn.innerText = 'Realizar Cierre de Caja';
+        btn.className = 'w-full py-3 bg-rose-500 text-white font-bold text-sm rounded-xl shadow-md';
+        badge.classList.remove('hidden');
+        showToast('Caja abierta con éxito', 'success');
+      } else {
+        statusText.innerText = 'Cerrada';
+        statusText.className = 'font-bold text-rose-500';
+        dashText.innerText = 'Cerrada';
+        btn.innerText = 'Abrir Caja con Fondo Inicial';
+        btn.className = 'w-full py-3 bg-brand-500 text-white font-bold text-sm rounded-xl shadow-md';
+        badge.classList.add('hidden');
+        showToast('Caja cerrada correctamente', 'info');
+      }
+    }
+
+    function createQuote() {
+      if(state.cart.length === 0) {
+        showToast('Agrega productos para cotizar', 'warning');
+        return;
+      }
+      showToast('Cotización generada exitosamente en borrador', 'success');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      const colors = {
+        success: 'bg-emerald-600 text-white',
+        error: 'bg-rose-600 text-white',
+        warning: 'bg-amber-500 text-white',
+        info: 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+      };
+
+      toast.className = `pointer-events-auto flex items-center space-x-2 px-4 py-3 rounded-xl shadow-xl text-xs font-bold transition-all transform translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+      toast.innerHTML = `<span>${message}</span>`;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 50);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
