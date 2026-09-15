@@ -1,5 +1,0 @@
-html, body, #root { height: 100%; margin: 0; }
-body { font-family: Inter, system-ui, sans-serif; }
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
-.dark ::-webkit-scrollbar-thumb { background: #334155; }
